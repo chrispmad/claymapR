@@ -1,7 +1,7 @@
 .Rproj.user
-*.png
 .Rhistory
 .Rdata
 .httr-oauth
 .DS_Store
 .quarto
+
