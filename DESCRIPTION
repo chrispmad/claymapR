@@ -1,0 +1,28 @@
+Package: claymapR
+Title: Mold clay maps of two or three dimensions to show polygon delineations
+Version: 0.0.0.9000
+Authors@R: 
+    person("Chris", "Madsen", "Paul", "Chris.Madsen@gov.bc.ca", role = c("aut", "cre"))
+Description: This package wraps and combines {sf}, {terra}, {tidverse} and {rgl} functions that you can use to make two- or three-dimensional maps of polygon data.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+URL: https://github.com/chrispmad/claymapR
+Imports:
+    dplyr,
+    tidyr,
+    rgl,
+    sf,
+    terra,
+    basemaps,
+    elevatr,
+    ggplot2,
+    ggthemes,
+    magick,
+    patchwork,
+    quadmesh,
+    raster,
+    rlang,
+    tidyterra
