@@ -26,3 +26,4 @@ Imports:
     raster,
     rlang,
     tidyterra
+BugReports: https://github.com/chrispmad/claymapR/issues
