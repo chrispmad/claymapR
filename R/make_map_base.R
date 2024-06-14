@@ -26,7 +26,7 @@ make_map_base = function(shapes, buffer = 5){
   } else {
     big_dimension = shape_h
   }
-  mbase = sf::st_buffer(ws_borders, dist = big_dimension * buffer)
+  mbase = sf::st_buffer(shapes, dist = big_dimension * buffer)
 
   return(mbase)
 }
