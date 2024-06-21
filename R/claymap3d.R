@@ -1,16 +1,15 @@
 #' Make a 3D "Clay" Map
 #'
+#' @param prepped_clay The output of a "prep_clay()" function call.
 #' @param shape_colour_var Variable name on which to base colour fill or border of shapes
 #' @param colour_type Should the shapes' border or fill be coloured? One of 'fill','border'
 #' @param colour_alpha Opacity of shape fill or border colour; defaults to 0.3 (30%)
 #' @param material The material to mold the 3d map from; one of 'clay', 'satellite'
-#' @param map_detail The level of detail for the map; min is 1 and max is 14, defaults to 6
-#' @param elevation_map A {terra} raster of elevation for the area of interest; default is NULL and will calculate
-#' @param distance_map A {terra} raster of distance from extended map base cells to the shapes to map; default is NULL and will calculate
+#' @param return_qmesh Should this function return a 'qmesh' object?
 #' @param take_snapshot Shall a 2D snapshot be taken of the 3d RGL widget? Defaults to TRUE
 #' @param snapshot_filename What filename shall be used for the snap? Default is system date.
 #'
-#' @return A 3D map RGL widget or snapshot thereof
+#' @return A 3D map RGL widget to interact with; optionally, also a snapshot and a 'qmesh' object
 #' @export
 #'
 #' @examples \dontrun
@@ -19,14 +18,18 @@ claymap3d = function(prepped_clay,
                      colour_type = c("fill"),
                      colour_alpha = 0.3,
                      material = 'clay',
+                     return_qmesh = TRUE,
                      take_snapshot = TRUE,
                      snapshot_filename = NULL
 ){
 
+  if(is.null(shape_colour_var)) stop("Sorry - please give the column name to colour the shape by as 'shape_colour_var'!")
+
   rgl::close3d()
 
+  # browser()
   shapes = prepped_clay$shapes
-  elevation_map = prepped_clay$elev_map
+  elevation_map = prepped_clay$elev
   dist_to_border = prepped_clay$dist_to_border
   map_detail = prepped_clay$map_detail
   mbase = prepped_clay$mbase
@@ -223,8 +226,7 @@ claymap3d = function(prepped_clay,
     rgl::rgl.snapshot(filename = snapshot_filename)
     cat(paste0("\nSnapshot file saved to ",snapshot_filename,"\n"))
   }
-
-  if(take_snapshot){
-    return(magick::image_read(snapshot_filename))
+  if(return_qmesh){
+    return(qmesh)
   }
 }

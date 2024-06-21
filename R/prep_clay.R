@@ -13,6 +13,8 @@ prep_clay = function(shapes, map_detail = 6){
     shapes = sf::st_transform(shapes, 3005)
   }
 
+  shapes_s = dplyr::summarise(shapes)
+
   cat("\nDigging up clay...\n")
 
   elev = terra::rast(
@@ -29,7 +31,7 @@ prep_clay = function(shapes, map_detail = 6){
 
   cat("\nKneading clay...\n")
 
-  dist_to_border = suppressWarnings(suppressMessages(terra::distance(elev_mb, ws_borders)))
+  dist_to_border = suppressWarnings(suppressMessages(terra::distance(elev_mb, shapes_s)))
 
   cat("\nClay prepped!\n")
 
