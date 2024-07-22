@@ -10,11 +10,14 @@ claymap3d(
   colour_type = c("fill"),
   colour_alpha = 0.3,
   material = "clay",
+  return_qmesh = TRUE,
   take_snapshot = TRUE,
   snapshot_filename = NULL
 )
 }
 \arguments{
+\item{prepped_clay}{The output of a "prep_clay()" function call.}
+
 \item{shape_colour_var}{Variable name on which to base colour fill or border of shapes}
 
 \item{colour_type}{Should the shapes' border or fill be coloured? One of 'fill','border'}
@@ -23,18 +26,14 @@ claymap3d(
 
 \item{material}{The material to mold the 3d map from; one of 'clay', 'satellite'}
 
+\item{return_qmesh}{Should this function return a 'qmesh' object?}
+
 \item{take_snapshot}{Shall a 2D snapshot be taken of the 3d RGL widget? Defaults to TRUE}
 
 \item{snapshot_filename}{What filename shall be used for the snap? Default is system date.}
-
-\item{map_detail}{The level of detail for the map; min is 1 and max is 14, defaults to 6}
-
-\item{elevation_map}{A {terra} raster of elevation for the area of interest; default is NULL and will calculate}
-
-\item{distance_map}{A {terra} raster of distance from extended map base cells to the shapes to map; default is NULL and will calculate}
 }
 \value{
-A 3D map RGL widget or snapshot thereof
+A 3D map RGL widget to interact with; optionally, also a snapshot and a 'qmesh' object
 }
 \description{
 Make a 3D "Clay" Map

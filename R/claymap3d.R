@@ -27,7 +27,6 @@ claymap3d = function(prepped_clay,
 
   rgl::close3d()
 
-  # browser()
   shapes = prepped_clay$shapes
   elevation_map = prepped_clay$elev
   dist_to_border = prepped_clay$dist_to_border

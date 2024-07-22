@@ -6,25 +6,21 @@
 \usage{
 mold_claymap(
   prepped_clay,
-  no_legend = TRUE,
   base_map_alpha = 0.5,
   shape_border_colour = "grey",
-  shape_fill_var = NULL,
-  shape_fill_alpha = 0.1,
+  shape_fill_vars = NULL,
+  palettes = c("Spectral"),
+  shape_fill_alphas = 0.1,
   background = TRUE,
   verbose = F
 )
 }
 \arguments{
-\item{no_legend}{Should the fill colour legend be dropped from the final map?}
-
 \item{base_map_alpha}{How transparent should the basemap be? Defaults to 0.5; higher values are more opaque.}
 
-\item{shape_border_colour}{What colour should delineate the shapes' borders?}
+\item{shape_border_colour}{(list) Which colours should delineate the shapes' borders?}
 
-\item{shape_fill_var}{Variable name on which to base colour fill of shapes}
-
-\item{shape_fill_alpha}{How transparent should the shapes' fill colour be?}
+\item{shape_fill_alphas}{How transparent should the shapes' colour/fill be?}
 
 \item{background}{Should an 'ocean' background be added?}
 
@@ -32,9 +28,7 @@ mold_claymap(
 
 \item{shapes}{Shapes to map}
 
-\item{map_detail}{If base_type is 'clay', a value from 1 (least detailed) to 14 (most detailed); default is 6}
-
-\item{elevation_map}{A {terra} raster of elevation for the area of interest; default is NULL and will calculate}
+\item{shape_colour_vars}{Variable name on which to base colour/fill of points/shapes respectively}
 }
 \value{
 A ggplot2 plot of your shape(s) with a basemap below.

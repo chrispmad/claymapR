@@ -7,12 +7,12 @@
 prep_clay(shapes, map_detail = 6)
 }
 \arguments{
-\item{shapes}{Shapes to map}
+\item{shapes}{Either a single {sf} polygon object, or a list thereof, to map}
 
 \item{map_detail}{The level of detail for the map; min is 1 and max is 14, defaults to 6}
 }
 \value{
-A list of data objects needed to mold 2- and 3-d clay maps
+A list of data objects needed to mold 2-d and 3-d clay maps
 }
 \description{
 Prep Clay for map-making.

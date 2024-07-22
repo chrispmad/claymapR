@@ -1,37 +1,73 @@
 #' Prep Clay for map-making.
 #'
-#' @param shapes Shapes to map
+#' @param shapes Either a single {sf} polygon object, or a list thereof, to map
 #' @param map_detail The level of detail for the map; min is 1 and max is 14, defaults to 6
 #'
-#' @return A list of data objects needed to mold 2- and 3-d clay maps
+#' @return A list of data objects needed to mold 2-d and 3-d clay maps
 #' @export
 #'
 #' @examples \dontrun
 prep_clay = function(shapes, map_detail = 6){
 
-  if(sf::st_crs(shapes) != sf::st_crs(3005)){
-    shapes = sf::st_transform(shapes, 3005)
-  }
+  # Ensure all shapes are in BC Albers (3005)
+  shapes = shapes |>
+    lapply(\(x) {
+      if(sf::st_crs(x) != sf::st_crs(3005)){
+        x = sf::st_transform(x, 3005)
+      }
+      x
+    })
 
-  shapes_s = dplyr::summarise(shapes)
+  # Find the total extent of all shapes.
+  max_ext = find_shapes_max_ext(shapes)
+
+  # Convert total extent to a square shape.
+  max_ext_sf = data.frame(x = c(max_ext$xmin, max_ext$xmax),
+                          y = c(max_ext$ymin, max_ext$ymax)) |>
+    sf::st_as_sf(coords = c('x','y'), crs = 3005) |>
+    sf::st_bbox() |>
+    sf::st_as_sfc() |>
+    sf::st_as_sf()
+
+  # Combine shapes.
+  shapes_c = shapes |>
+    lapply(summarise) |>
+    dplyr::bind_rows() |>
+    dplyr::summarise()
 
   cat("\nDigging up clay...\n")
 
   elev = terra::rast(
     suppressMessages(
       elevatr::get_elev_raster(
-        locations = shapes,
+        locations = shapes_c,
         z = map_detail)
     )
   )
 
-  mbase = make_map_base(shapes, buffer = 0.1)
+  # Crop elevation to extent of shapes
+
+  mbase = make_map_base(shapes_c, buffer = 0.05)
 
   elev_mb = terra::crop(terra::mask(elev, mbase), mbase)
 
+  elev_c = terra::crop(terra::mask(elev, shapes_c), shapes_c)
+
   cat("\nKneading clay...\n")
 
-  dist_to_border = suppressWarnings(suppressMessages(terra::distance(elev_mb, shapes_s)))
+  dist_r = terra::crop(elev, mbase)
+  dist_r[] <- 0
+
+  # Something weird about this distance to border piece...
+  # dist_to_border = suppressWarnings(suppressMessages(terra::distance(elev_mb,shapes_c)))
+  dist_to_border = suppressWarnings(
+    suppressMessages(
+      terra::distance(
+        dist_r,
+        terra::vect(shapes_c)
+      )
+    )
+  )
 
   cat("\nClay prepped!\n")
 
