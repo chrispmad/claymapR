@@ -11,24 +11,23 @@ mold_claymap(
   shape_fill_vars = NULL,
   palettes = c("Spectral"),
   shape_fill_alphas = 0.1,
-  background = TRUE,
-  verbose = F
+  background = TRUE
 )
 }
 \arguments{
+\item{prepped_clay}{This claymapR list object includes prepared data}
+
 \item{base_map_alpha}{How transparent should the basemap be? Defaults to 0.5; higher values are more opaque.}
 
-\item{shape_border_colour}{(list) Which colours should delineate the shapes' borders?}
+\item{shape_border_colour}{Which colour should delineate polygon borders?}
 
-\item{shape_fill_alphas}{How transparent should the shapes' colour/fill be?}
+\item{shape_fill_vars}{Variable names on which to base colour/fill of points/shapes respectively}
+
+\item{palettes}{Which palettes should be used for shapes' colour or fill?}
+
+\item{shape_fill_alphas}{How transparent should the shapes' colour(s)/fill(s) be?}
 
 \item{background}{Should an 'ocean' background be added?}
-
-\item{verbose}{Return copious feedback?}
-
-\item{shapes}{Shapes to map}
-
-\item{shape_colour_vars}{Variable name on which to base colour/fill of points/shapes respectively}
 }
 \value{
 A ggplot2 plot of your shape(s) with a basemap below.

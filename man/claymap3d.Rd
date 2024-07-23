@@ -6,23 +6,20 @@
 \usage{
 claymap3d(
   prepped_clay,
-  shape_colour_var = NULL,
-  colour_type = c("fill"),
-  colour_alpha = 0.3,
+  shape_fill_vars = NULL,
+  palettes = c("Spectral"),
+  shape_fill_alphas = 0.1,
+  shape_border_colour = "grey",
   material = "clay",
   return_qmesh = TRUE,
-  take_snapshot = TRUE,
+  take_snapshot = FALSE,
   snapshot_filename = NULL
 )
 }
 \arguments{
 \item{prepped_clay}{The output of a "prep_clay()" function call.}
 
-\item{shape_colour_var}{Variable name on which to base colour fill or border of shapes}
-
-\item{colour_type}{Should the shapes' border or fill be coloured? One of 'fill','border'}
-
-\item{colour_alpha}{Opacity of shape fill or border colour; defaults to 0.3 (30\%)}
+\item{shape_fill_vars}{Variable name on which to base colour fill or border of shapes}
 
 \item{material}{The material to mold the 3d map from; one of 'clay', 'satellite'}
 
@@ -31,6 +28,10 @@ claymap3d(
 \item{take_snapshot}{Shall a 2D snapshot be taken of the 3d RGL widget? Defaults to TRUE}
 
 \item{snapshot_filename}{What filename shall be used for the snap? Default is system date.}
+
+\item{colour_type}{Should the shapes' border or fill be coloured? One of 'fill','border'}
+
+\item{colour_alpha}{Opacity of shape fill or border colour; defaults to 0.3 (30\%)}
 }
 \value{
 A 3D map RGL widget to interact with; optionally, also a snapshot and a 'qmesh' object

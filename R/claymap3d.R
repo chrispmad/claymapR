@@ -1,7 +1,7 @@
 #' Make a 3D "Clay" Map
 #'
 #' @param prepped_clay The output of a "prep_clay()" function call.
-#' @param shape_colour_var Variable name on which to base colour fill or border of shapes
+#' @param shape_fill_vars Variable name on which to base colour fill or border of shapes
 #' @param colour_type Should the shapes' border or fill be coloured? One of 'fill','border'
 #' @param colour_alpha Opacity of shape fill or border colour; defaults to 0.3 (30%)
 #' @param material The material to mold the 3d map from; one of 'clay', 'satellite'
@@ -14,49 +14,50 @@
 #'
 #' @examples \dontrun
 claymap3d = function(prepped_clay,
-                     shape_colour_var = NULL,
-                     colour_type = c("fill"),
-                     colour_alpha = 0.3,
+                     shape_fill_vars = NULL,
+                     palettes = c('Spectral'),
+                     shape_fill_alphas = 0.1,
+                     shape_border_colour = 'grey',
+                     # colour_type = c("fill"),
+                     # colour_alpha = 0.3,
                      material = 'clay',
                      return_qmesh = TRUE,
-                     take_snapshot = TRUE,
+                     take_snapshot = FALSE,
                      snapshot_filename = NULL
 ){
 
-  if(is.null(shape_colour_var)) stop("Sorry - please give the column name to colour the shape by as 'shape_colour_var'!")
+  if(is.null(shape_fill_vars)) stop("Sorry - please give the column name to colour the shape by as 'shape_fill_vars'!")
 
   rgl::close3d()
 
   shapes = prepped_clay$shapes
-  elevation_map = prepped_clay$elev
+  elev = prepped_clay$elev
   dist_to_border = prepped_clay$dist_to_border
   map_detail = prepped_clay$map_detail
   mbase = prepped_clay$mbase
   elev = prepped_clay$elev
   elev_mb = prepped_clay$elev_mb
 
-  shape_sum = dplyr::summarise(shapes)
+  # shape_sum = dplyr::summarise(shapes)
 
   # Grab elevation map, if supplied.
   # The user has opted for a "clay" map - i.e. using elevation!
-  if(!is.null(elevation_map)){
-    elev = elevation_map
-  } else {
-    # Grab elevation data.
-    elev = terra::rast(
-      suppressMessages(
-        elevatr::get_elev_raster(
-        locations = shape_sum,
-        z = map_detail)
-      )
-    )
-  }
+  # if(is.null(elevation_map)){
+  #   # Grab elevation data.
+  #   elev = terra::rast(
+  #     suppressMessages(
+  #       elevatr::get_elev_raster(
+  #       locations = shape_sum,
+  #       z = map_detail)
+  #     )
+  #   )
+  # }
 
   # Calculate distance to border, or read in raster :)
   # Find distance for framing map base portion to elevation values within shape.
 
   # Do elevation stuff
-  elev_c = terra::crop(terra::mask(elev, shape_sum), shape_sum)
+  # elev_c = terra::crop(terra::mask(elev, shape_sum), shape_sum)
 
   # mbase = make_map_base(shape_sum, buffer = 0.1)
   #
@@ -142,41 +143,90 @@ claymap3d = function(prepped_clay,
       ggplot2::theme(legend.position = 'none')
   }
 
-  # Combine the satellite imagery with the shapes; save to disk?
+  # Combine the satellite/clay imagery with the shapes; save to disk?
   # image_filepath = 'texture_image.png'
 
   image_filepath = tempfile()
 
   grDevices::png(filename = image_filepath, width = 10, height = 10, units = 'in', res = 300)
 
-  if(colour_type == 'fill'){
-    overlay = ggplot2::ggplot() +
-      ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
-                       ggplot2::aes(fill = !!rlang::sym(shape_colour_var)),
-                       alpha = colour_alpha) +
+  # Add shapes over top. One layer per shape?
+  shape_layers = list()
+
+  for(i in 1:length(shapes)){
+
+    # Depending on geometry of each shape, use colour input
+    # to set either the colour or fill of the shape.
+    p <- ggplot2::ggplot()
+
+    p <- p
+    # ggplot2::geom_sf(data = shapes[[i]], ggplot2::aes(fill = !!rlang::sym(shape_fill_vars[[i]])),
+    #                  col = shape_border_colour[[i]], alpha = shape_fill_alphas[[i]]) +
+
+    # Is the colour palette continuous or discrete?
+
+    if(unique(sf::st_geometry_type(shapes[[i]]))[1] %in% c("POINT","LINESTRING")){
+      # Points / linestrings detected; apply colour var and palette to 'color' aesthetic.
+      p <- p +
+        ggplot2::geom_sf(data = shapes[[i]], ggplot2::aes(color = !!rlang::sym(shape_fill_vars[[i]])),
+                         alpha = shape_fill_alphas[[i]])
+    }
+    if(unique(sf::st_geometry_type(shapes[[i]]))[1] %in% c("POLYGON","MULTIPOLYGON")){
+      # polygons detected; apply colour var and palette to 'color' aesthetic.
+      p <- p +
+        ggplot2::geom_sf(data = shapes[[i]], ggplot2::aes(fill = !!rlang::sym(shape_fill_vars[[i]])),
+                         col = shape_border_colour[[i]], alpha = shape_fill_alphas[[i]])
+    }
+
+    p = p +
+      ggplot2::scale_colour_brewer(palette = palettes[[i]]) +
       ggthemes::theme_map() +
-      ggplot2::theme(legend.position = 'none',
-                     plot.background = ggplot2::element_rect(fill = 'transparent',
-                                                             colour = 'transparent'))
+      ggplot2::theme(legend.position = 'right') +
+      ggplot2::labs(fill = 'Identity') +
+      ggplot2::coord_sf(xlim = sf::st_bbox(mbase)[c(1,3)],
+                        ylim = sf::st_bbox(mbase)[c(2,4)]) +
+      ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(alpha = 1)))
+
+    # I haven't figured out how to add legends successfully; for now,
+    # don't include!
+    # if(!include_legends[[i]]) {
+    p = p +
+      ggplot2::theme(legend.position = 'none')
+    # }
+
+    shape_layers[[i]] <- p
   }
-  if(colour_type == 'border'){
-    overlay = ggplot2::ggplot() +
-      ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
-                       ggplot2::aes(colour = !!rlang::sym(shape_colour_var),
-                                    fill = !!rlang::sym(shape_colour_var)),
-                       alpha = colour_alpha,
-                       linewidth = 1.5
-      ) +
-      ggthemes::theme_map() +
-      ggplot2::theme(legend.position = 'none',
-        plot.background = ggplot2::element_rect(fill = 'transparent',
-                                                colour = 'transparent'))
-  }
+  # if(colour_type == 'fill'){
+    # overlay = ggplot2::ggplot() +
+    #   ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
+    #                    ggplot2::aes(fill = !!rlang::sym(shape_fill_vars)),
+    #                    alpha = shape_fill_alphas) +
+    #   ggthemes::theme_map() +
+    #   ggplot2::theme(legend.position = 'none',
+    #                  plot.background = ggplot2::element_rect(fill = 'transparent',
+    #                                                          colour = 'transparent'))
+  # }
+  # if(colour_type == 'border'){
+  #   overlay = ggplot2::ggplot() +
+  #     ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
+  #                      ggplot2::aes(colour = !!rlang::sym(shape_fill_vars),
+  #                                   fill = !!rlang::sym(shape_fill_vars)),
+  #                      alpha = shape_fill_alphas,
+  #                      linewidth = 1.5
+  #     ) +
+  #     ggthemes::theme_map() +
+  #     ggplot2::theme(legend.position = 'none',
+  #       plot.background = ggplot2::element_rect(fill = 'transparent',
+  #                                               colour = 'transparent'))
+  # }
   full_plot = gg_baselayer +
-    constrain_ggplot +
-    patchwork::inset_element(overlay + constrain_ggplot,
-                             left = 0, bottom = 0,
-                             right = 1, top = 1, align_to = 'full')
+    constrain_ggplot
+
+  for(i in 1:length(shapes)){
+    full_plot = full_plot +
+      patchwork::inset_element(shape_layers[[i]], left = 0, bottom = 0,
+                               right = 1, top = 1, align_to = 'full')
+  }
 
   print(full_plot)
 
@@ -211,6 +261,19 @@ claymap3d = function(prepped_clay,
     )
   )
 
+  # Calculate the map width, and from that, the size of markers.
+  elev_ext = as.data.frame(as.matrix(terra::ext(elev_mb)))
+  width_of_map = elev_ext$max[1] - elev_ext$min[1]
+  marker_size = width_of_map / 100
+
+  # Function to add a balloon to each marker location.
+  add_balloon_marker <- function(x, y, z, size = 10, col_var) {
+    x = as.numeric(x); y = as.numeric(y); z = as.numeric(z)
+    spheres3d(x, y, z, radius = size, color = col_var)
+    # Add the string of the balloon as a line
+    lines3d(c(x, x), c(y, y), c(z + z*0.2, z), color = "black")
+  }
+
   # Open a big RGL window
   rgl::open3d(windowRect = c(100,100,1200,800))
   # Plot the clay map in the RGL window
@@ -218,14 +281,45 @@ claymap3d = function(prepped_clay,
   # Adjust RGL window's focus
   rgl::view3d(theta = 0, phi = -50, fov = 10, zoom = 0.55)
 
+  # Take marker layers and convert them to matrices to be added
+  # to RGL window manually.
+  for(i in 1:length(shapes)){
+    # Test if this layer could be a marker; use geometry type.
+    if(unique(sf::st_geometry_type(shapes[[i]]))[1] == 'POINT'){
+      marks = shapes[[i]]
+      # Extract elevation from elev_mb raster.
+      marks$elev = terra::extract(elev_mb, terra::vect(marks))[,2]
+
+      # Make into dataframe with a colour variable column.
+      marks = marks |>
+        dplyr::mutate(lat = sf::st_coordinates(geometry)[,2],
+                      lng = sf::st_coordinates(geometry)[,1]) |>
+        sf::st_drop_geometry() |>
+        dplyr::select(lat,lng,elev,!!rlang::sym(shape_fill_vars[i])) |>
+        dplyr::mutate(col_var = leaflet::colorFactor(palette = palettes[i], domain = unique(marks$LONG_TYPE))(!!rlang::sym(shape_fill_vars[i])))
+
+      # Once the RGL window is open, cycle through all markers, adding them
+      # to the map one-by-one.
+      apply(marks, 1, function(coord) {
+        add_balloon_marker(coord[2], coord[1], coord[3],
+                           size = marker_size, coord[5])
+      })
+    }
+  }
+
   if(take_snapshot){
     if(is.null(snapshot_filename)){
-      snapshot_filename = paste0("claymap_",Sys.Date(),"_",colour_type,"_colour.png")
+      snapshot_filename = paste0("claymap_",Sys.Date(),".png")
     }
     rgl::rgl.snapshot(filename = snapshot_filename)
     cat(paste0("\nSnapshot file saved to ",snapshot_filename,"\n"))
   }
-  if(return_qmesh){
-    return(qmesh)
-  }
+
+  # Convert our RGL window to a widget; we can export this from the function.
+  widget <- rgl::rglwidget()
+
+  return(widget)
+  # if(return_qmesh){
+  #   return(qmesh)
+  # }
 }

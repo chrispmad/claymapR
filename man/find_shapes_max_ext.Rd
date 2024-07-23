@@ -9,12 +9,15 @@ find_shapes_max_ext(shapes)
 \arguments{
 \item{shapes}{Either a single {sf} polygon object, or a list thereof, to map}
 }
+\value{
+A dataframe describing the max boundaries of the submitted shapes
+}
 \description{
 Find the maximum extent of shapes
 }
 \examples{
-t = data.frame(l = 50, ln = -120) |> st_as_sf(coords = c('ln','l'), crs = 4326)
-b = data.frame(l = 49, ln = -120) |> st_as_sf(coords = c('ln','l'), crs = 4326)
+t = data.frame(l = 50, ln = -120) |> sf::st_as_sf(coords = c('ln','l'), crs = 4326)
+b = data.frame(l = 49, ln = -120) |> sf::st_as_sf(coords = c('ln','l'), crs = 4326)
 li = list(t, b)
 find_shapes_max_ext(li)
 

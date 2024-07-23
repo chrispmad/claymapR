@@ -1,12 +1,12 @@
 #' Mold a Clay Map with Shapes on top
 #'
-#' @param shapes Shapes to map
+#' @param prepped_clay This claymapR list object includes prepared data
 #' @param base_map_alpha How transparent should the basemap be? Defaults to 0.5; higher values are more opaque.
-#' @param shape_border_colour (list) Which colours should delineate the shapes' borders?
-#' @param shape_colour_vars Variable name on which to base colour/fill of points/shapes respectively
-#' @param shape_fill_alphas How transparent should the shapes' colour/fill be?
+#' @param shape_border_colour Which colour should delineate polygon borders?
+#' @param shape_fill_vars Variable names on which to base colour/fill of points/shapes respectively
+#' @param palettes Which palettes should be used for shapes' colour or fill?
+#' @param shape_fill_alphas How transparent should the shapes' colour(s)/fill(s) be?
 #' @param background Should an 'ocean' background be added?
-#' @param verbose Return copious feedback?
 #'
 #' @return A ggplot2 plot of your shape(s) with a basemap below.
 #' @export
@@ -18,8 +18,7 @@ mold_claymap = function(prepped_clay,
                         shape_fill_vars = NULL,
                         palettes = c('Spectral'),
                         shape_fill_alphas = 0.1,
-                        background = TRUE,
-                        verbose = F){
+                        background = TRUE){
 
   shapes = prepped_clay$shapes
   elevation_map = prepped_clay$elev_map
@@ -34,7 +33,6 @@ mold_claymap = function(prepped_clay,
 
   if(is.null(map_detail)){
     map_detail = 6
-    if(verbose) cat("\nSetting map detail arg to default of 6 (minimum is 1, maximum is 14)")
   }
 
   # Ensure we have enough values for border colours, alpha, and palettes
