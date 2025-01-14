@@ -1,6 +1,6 @@
 #' Make a 3D "Clay" Map
 #'
-#' @param prepped_clay The output of a "prep_clay()" function call.
+#' @param pc The output of a "prep_clay()" function call.
 #' @param shape_fill_vars Variable name on which to base colour fill or border of shapes
 #' @param colour_type Should the shapes' border or fill be coloured? One of 'fill','border'
 #' @param colour_alpha Opacity of shape fill or border colour; defaults to 0.3 (30%)
@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples \dontrun
-claymap3d = function(prepped_clay,
+claymap3d = function(pc,
                      shape_fill_vars = NULL,
                      palettes = c('Spectral'),
                      shape_fill_alphas = 0.1,
@@ -28,40 +28,16 @@ claymap3d = function(prepped_clay,
 
   if(is.null(shape_fill_vars)) stop("Sorry - please give the column name to colour the shape by as 'shape_fill_vars'!")
 
+  if(terra::ncell(prepped_clay$elev_mb) > 350000) warning("Please note: elevation maps of 600x600 cells (360,000 total) or more may introduce lag.")
   rgl::close3d()
 
-  shapes = prepped_clay$shapes
-  elev = prepped_clay$elev
-  dist_to_border = prepped_clay$dist_to_border
-  map_detail = prepped_clay$map_detail
-  mbase = prepped_clay$mbase
-  elev = prepped_clay$elev
-  elev_mb = prepped_clay$elev_mb
-
-  # shape_sum = dplyr::summarise(shapes)
-
-  # Grab elevation map, if supplied.
-  # The user has opted for a "clay" map - i.e. using elevation!
-  # if(is.null(elevation_map)){
-  #   # Grab elevation data.
-  #   elev = terra::rast(
-  #     suppressMessages(
-  #       elevatr::get_elev_raster(
-  #       locations = shape_sum,
-  #       z = map_detail)
-  #     )
-  #   )
-  # }
-
-  # Calculate distance to border, or read in raster :)
-  # Find distance for framing map base portion to elevation values within shape.
-
-  # Do elevation stuff
-  # elev_c = terra::crop(terra::mask(elev, shape_sum), shape_sum)
-
-  # mbase = make_map_base(shape_sum, buffer = 0.1)
-  #
-  # elev_mb = terra::crop(terra::mask(elev, mbase), mbase)
+  shapes = pc$shapes
+  elev = pc$elev
+  dist_to_border = pc$dist_to_border
+  map_detail = pc$map_detail
+  mbase = pc$mbase
+  elev = pc$elev
+  elev_mb = pc$elev_mb
 
   # Expand our elevation raster to the elevation model base extent, use distance function to
   # infer dropping elevation values.
@@ -105,7 +81,7 @@ claymap3d = function(prepped_clay,
       methods::as("SpatRaster")
 
     # Reproject satellite imagery into the CRS of the elev_mb object.
-    sat_r = terra::project(sat_r, terra::crs(elev_mb))
+    invisible(sat_r = terra::project(sat_r, terra::crs(elev_mb)))
 
     # Crop, resample and mask satellite imagery by elev_mb.
     sat_r = terra::crop(sat_r, elev_mb)
@@ -196,29 +172,7 @@ claymap3d = function(prepped_clay,
 
     shape_layers[[i]] <- p
   }
-  # if(colour_type == 'fill'){
-    # overlay = ggplot2::ggplot() +
-    #   ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
-    #                    ggplot2::aes(fill = !!rlang::sym(shape_fill_vars)),
-    #                    alpha = shape_fill_alphas) +
-    #   ggthemes::theme_map() +
-    #   ggplot2::theme(legend.position = 'none',
-    #                  plot.background = ggplot2::element_rect(fill = 'transparent',
-    #                                                          colour = 'transparent'))
-  # }
-  # if(colour_type == 'border'){
-  #   overlay = ggplot2::ggplot() +
-  #     ggplot2::geom_sf(data = sf::st_transform(shapes,terra::crs(elev_mb)),
-  #                      ggplot2::aes(colour = !!rlang::sym(shape_fill_vars),
-  #                                   fill = !!rlang::sym(shape_fill_vars)),
-  #                      alpha = shape_fill_alphas,
-  #                      linewidth = 1.5
-  #     ) +
-  #     ggthemes::theme_map() +
-  #     ggplot2::theme(legend.position = 'none',
-  #       plot.background = ggplot2::element_rect(fill = 'transparent',
-  #                                               colour = 'transparent'))
-  # }
+
   full_plot = gg_baselayer +
     constrain_ggplot
 
@@ -245,7 +199,7 @@ claymap3d = function(prepped_clay,
 
   # Update the extent and CRS
   terra::ext(surface_img_rast) = terra::ext(elev_mb)
-  terra::crs(surface_img_rast) = terra::crs(elev_mb)
+  terra::crs(surface_img_rast) = invisible(terra::crs(elev_mb))
 
   si_r = suppressWarnings(raster::raster(surface_img_rast$R))
   si_g = suppressWarnings(raster::raster(surface_img_rast$G))
@@ -267,11 +221,13 @@ claymap3d = function(prepped_clay,
   marker_size = width_of_map / 100
 
   # Function to add a balloon to each marker location.
-  add_balloon_marker <- function(x, y, z, size = 10, col_var) {
-    x = as.numeric(x); y = as.numeric(y); z = as.numeric(z)
-    spheres3d(x, y, z, radius = size, color = col_var)
+  add_balloon_marker <- function(x, y, z, z_bounds, size = 10, col_var) {
+    x = as.numeric(x); y = as.numeric(y); z = as.numeric(z) + z_bounds
+    rgl::spheres3d(x, y, z, radius = size, color = col_var)
     # Add the string of the balloon as a line
-    lines3d(c(x, x), c(y, y), c(z + z*0.2, z), color = "black")
+    # browser()
+    # rgl::lines3d(c(x, x), c(y, y), c(z + z*0.2, z), color = "black")
+    rgl::lines3d(c(x, x), c(y, y), c(z - z_bounds, z), color = "black")
   }
 
   # Open a big RGL window
@@ -298,10 +254,14 @@ claymap3d = function(prepped_clay,
         dplyr::select(lat,lng,elev,!!rlang::sym(shape_fill_vars[i])) |>
         dplyr::mutate(col_var = leaflet::colorFactor(palette = palettes[i], domain = unique(marks$LONG_TYPE))(!!rlang::sym(shape_fill_vars[i])))
 
+      # Find maximum and minimum heights
+      max_z = max(marks$elev, na.rm=T)
+      min_z = min(marks$elev, na.rm=T)
+      z_bounds = max_z - min_z
       # Once the RGL window is open, cycle through all markers, adding them
       # to the map one-by-one.
       apply(marks, 1, function(coord) {
-        add_balloon_marker(coord[2], coord[1], coord[3],
+        add_balloon_marker(coord[2], coord[1], coord[3], z_bounds,
                            size = marker_size, coord[5])
       })
     }
